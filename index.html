@@ -47,18 +47,27 @@ button.secondary{background:#e8eef5;color:#17365d}button.danger{background:#fff0
 <h2>新增清點紀錄</h2>
 <div class="tabs"><button id="batchTab" class="active" type="button">批次登記</button><button id="singleTab" type="button">單捆登記</button></div>
 <div class="grid">
-<div><label>Hold</label><select id="hold"><option>H/1</option><option>H/2</option><option>H/3</option><option>H/4</option><option>H/5</option><option>Deck</option></select></div>
+<div><label>Hold</label><select id="hold"><option>H/1</option><option>H/2</option><option>H/3</option><option>H/4</option><option>H/5</option><option>H/6</option><option>Deck</option></select></div>
 <div><label>Bay</label><input id="bay" value="01" placeholder="例如 01"></div>
 <div class="full"><label>貨物種類</label><select id="cargo"><option>Steel Pipe 鋼管</option><option>Steel Plate 鋼板</option><option>Steel Coil 鋼捲</option><option>H-Beam H型鋼</option><option>Timber 木材</option><option>Other 其他</option></select></div>
 <div class="full"><label>貨物規格（必填）</label><input id="spec" placeholder="例如 Ø114 × 6.0mm"></div>
 <div><label>長度（公尺）</label><input id="length" type="number" min="0" step="0.01" value="6"></div>
 <div><label>每捆支數／件數</label><input id="pieces" type="number" min="1" step="1" value="20"></div>
 <div id="bundlesWrap" class="full"><label>本次捆數</label><input id="bundles" type="number" min="1" step="1" value="5"></div>
-<div><label>單捆重量（選填）</label><input id="weight" type="number" min="0" step="0.001" placeholder="可留白"></div>
-<div><label>重量單位</label><select id="weightUnit"><option>TON</option><option>KG</option></select></div>
+<div><label>重量（選填）</label><input id="weight" type="number" min="0" step="0.001" placeholder="可留白；選擇單捆或整批輸入"></div>
+<div><label>重量輸入方式</label><select id="weightBasis"><option value="per_bundle">單捆重量</option><option value="batch_total">整批總重量</option></select></div>
+<div><label>重量單位</label><select id="weightUnit"><option>KG</option><option>TON</option></select></div>
 <div class="full"><label>捆號／起訖號（選填）</label><input id="bundleNo" placeholder="例如 SP-001 或 SP-001~SP-005"></div>
 <div class="full"><label>備註／異常</label><textarea id="remark" placeholder="破損、短少、標籤遺失等"></textarea></div>
 </div>
+<div class="full"><label>貨物照片（可多選；整批或單捆照片）</label><input id="cargoPhotos" type="file" accept="image/*" capture="environment" multiple><p class="notice">批次清點可拍整批貨物；單捆清點可拍該捆貨物。照片會壓縮後儲存在手機本機。</p></div>
+<div class="full"><label>照片類型</label><select id="photoKind"><option value="batch">整批照片</option><option value="bundle">單捆照片</option><option value="overview">Bay／現場全景</option></select></div>
+<div class="full" style="border-top:1px solid #e0e5ed;padding-top:12px"><label><input id="hasDamage" type="checkbox" style="width:auto;min-height:auto;margin-right:6px">本批貨物有破損／異常</label></div>
+<div><label>破損類型</label><select id="damageType"><option>彎曲／變形</option><option>斷裂／破損</option><option>鏽蝕</option><option>包裝／捆綁鬆脫</option><option>數量短少</option><option>標示牌遺失</option><option>其他</option></select></div>
+<div><label>破損位置／捆號</label><input id="damageLocation" placeholder="例如 SP-003／外側"></div>
+<div class="full"><label>破損照片（可多選）</label><input id="damagePhotos" type="file" accept="image/*" capture="environment" multiple></div>
+<div class="full"><label>破損說明</label><textarea id="damageRemark" placeholder="描述破損狀況、位置及處理情形"></textarea></div>
+<div class="full"><label>AI 辨識狀態</label><select id="aiStatus"><option value="pending">尚未辨識</option><option value="needs_review">待 AI／人工覆核</option><option value="confirmed">人工已確認</option></select><p class="notice">離線時可照常清點及保存照片。雲端 AI 辨識需後續接上安全的伺服器服務；目前不會把未辨識結果冒充 AI 計數。</p></div>
 <p class="notice" id="preview">本次預計：5 捆 × 20 件 = 100 件</p>
 <button id="save" style="width:100%">儲存清點紀錄</button>
 <p class="notice">批次登記只適用於同一 Hold、Bay、種類、規格、長度、每捆件數及單捆重量相同的貨物。若每捆件數不同，請逐捆登記。</p>
@@ -73,7 +82,7 @@ button.secondary{background:#e8eef5;color:#17365d}button.danger{background:#fff0
 </div>
 <div class="grid" style="margin-top:12px">
 <div><label>統計分類</label><select id="groupBy"><option value="hold">Hold</option><option value="bay">Bay</option><option value="cargo">貨物種類</option><option value="spec">規格</option><option value="length">長度</option></select></div>
-<div><label>明細篩選 Hold</label><select id="filterHold"><option value="">全部</option><option>H/1</option><option>H/2</option><option>H/3</option><option>H/4</option><option>H/5</option><option>Deck</option></select></div>
+<div><label>明細篩選 Hold</label><select id="filterHold"><option value="">全部</option><option>H/1</option><option>H/2</option><option>H/3</option><option>H/4</option><option>H/5</option><option>H/6</option><option>Deck</option></select></div>
 </div>
 <div id="summary"></div>
 </section>
@@ -90,7 +99,10 @@ button.secondary{background:#e8eef5;color:#17365d}button.danger{background:#fff0
 <button id="clear" type="button" class="danger">清空資料</button>
 <input id="restoreFile" type="file" accept=".json,application/json" hidden>
 </div>
-<p class="notice">Excel（.xlsx）會包含清點明細及 Hold、Bay、貨物種類、規格、長度統計；CSV 可作為簡易明細備份。每筆紀錄都會保留按下「儲存清點紀錄」的本機日期時間。</p>
+<p class="notice">Excel 依照原本範本保留「清點明細／統計報表／使用說明」三張工作表，並增加照片索引、破損紀錄及 AI 覆核狀態。照片本體留存在手機資料庫；Excel 內列出照片檔名及紀錄編號。</p>
+</section>
+<section class="card">
+<h2>照片與 AI 使用說明</h2><p class="notice">照片會壓縮後存在本機資料庫，請定期備份。照片索引會隨 Excel 匯出；照片本體目前不會嵌入 Excel。Daily - 1 以所選日期統計 WORKED TO DAY，之前日期統計 PREVIOUSLY。AI 欄位先記錄辨識／覆核狀態，雲端 AI 需完成後端服務設定後才會真正辨識，離線清點不受影響。</p>
 </section>
 <section class="card">
 <h2>使用提醒</h2>
@@ -107,31 +119,36 @@ function del(id){return new Promise((resolve,reject)=>{const tx=db.transaction(S
 function clearDB(){return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function num(v){return Number(v)||0}
+function totalWeight(r){if(r.weight===null||r.weight===undefined)return 0;return r.weightBasis==='batch_total'?r.weight:r.weight*r.bundles}
 function formatTime(iso){if(!iso)return '舊資料無時間';return new Date(iso).toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});}
 function localDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function updatePreview(){const b=mode==='single'?1:num($('bundles').value),p=num($('pieces').value);$('preview').textContent=`本次預計：${b} 捆 × ${p} 件 = ${b*p} 件`;$('bundlesWrap').style.display=mode==='single'?'none':'block'}
 function groupLabel(r,k){return k==='hold'?r.hold:k==='bay'?r.bay:k==='cargo'?r.cargo:k==='spec'?r.spec:`${r.length} m`}
 async function refresh(){
  records=await all(); const totalB=records.reduce((s,r)=>s+r.bundles,0), totalP=records.reduce((s,r)=>s+r.bundles*r.pieces,0);
- const ton=records.filter(r=>r.weight!==null&&r.weightUnit==='TON').reduce((s,r)=>s+r.weight*r.bundles,0);
- const kg=records.filter(r=>r.weight!==null&&r.weightUnit==='KG').reduce((s,r)=>s+r.weight*r.bundles,0);
+ const ton=records.filter(r=>r.weight!==null&&r.weightUnit==='TON').reduce((s,r)=>s+totalWeight(r),0);
+ const kg=records.filter(r=>r.weight!==null&&r.weightUnit==='KG').reduce((s,r)=>s+totalWeight(r),0);
  $('sBundles').textContent=totalB.toLocaleString();$('sPieces').textContent=totalP.toLocaleString();$('sTon').textContent=ton.toLocaleString(undefined,{maximumFractionDigits:3});$('sKg').textContent=kg.toLocaleString(undefined,{maximumFractionDigits:3});
- const key=$('groupBy').value,groups={};records.forEach(r=>{const k=groupLabel(r,key);groups[k]??={b:0,p:0,ton:0,kg:0};groups[k].b+=r.bundles;groups[k].p+=r.bundles*r.pieces;if(r.weight!==null){groups[k][r.weightUnit.toLowerCase()]+=r.weight*r.bundles}});
+ const key=$('groupBy').value,groups={};records.forEach(r=>{const k=groupLabel(r,key);groups[k]??={b:0,p:0,ton:0,kg:0};groups[k].b+=r.bundles;groups[k].p+=r.bundles*r.pieces;if(r.weight!==null){groups[k][r.weightUnit.toLowerCase()]+=totalWeight(r)}});
  $('summary').innerHTML=Object.keys(groups).length?Object.entries(groups).map(([k,v])=>`<div class="item"><div class="itemtop"><b>${esc(k)}</b><span class="pill">${v.b} 捆</span></div><div class="muted">${v.p.toLocaleString()} 件 · ${v.ton.toLocaleString()} TON · ${v.kg.toLocaleString()} KG</div></div>`).join(''):'<div class="empty">尚無統計資料</div>';
  const f=$('filterHold').value,shown=records.filter(r=>!f||r.hold===f).slice().reverse();$('count').textContent=`${shown.length} 筆`;
- $('records').innerHTML=shown.length?shown.map(r=>`<div class="item"><div class="itemtop"><b>#${r.id} ${esc(r.cargo)}</b><button class="danger" data-del="${r.id}" style="padding:7px 10px;font-size:12px">刪除</button></div><div class="muted">${esc(r.hold)} / Bay ${esc(r.bay)} · ${esc(r.spec)}</div><div>${r.bundles} 捆 × ${r.pieces} 件 = <b>${(r.bundles*r.pieces).toLocaleString()} 件</b></div><div class="muted">長度 ${r.length} m · ${r.weight===null?'重量未提供':`${r.weight} ${r.weightUnit}/捆`}${r.bundleNo?' · 捆號 '+esc(r.bundleNo):''}</div><div class="muted">儲存時間：${esc(formatTime(r.createdAt))}</div>${r.remark? `<div class="muted">備註：${esc(r.remark)}</div>`:''}</div>`).join(''):'<div class="empty">尚無紀錄</div>';
+ $('records').innerHTML=shown.length?shown.map(r=>`<div class="item"><div class="itemtop"><b>#${r.id} ${esc(r.cargo)}</b><button class="danger" data-del="${r.id}" style="padding:7px 10px;font-size:12px">刪除</button></div><div class="muted">${esc(r.hold)} / Bay ${esc(r.bay)} · ${esc(r.spec)}</div><div>${r.bundles} 捆 × ${r.pieces} 件 = <b>${(r.bundles*r.pieces).toLocaleString()} 件</b></div><div class="muted">長度 ${r.length} m · ${r.weight===null?'重量未提供':`${r.weight} ${r.weightUnit}/捆`}${r.bundleNo?' · 捆號 '+esc(r.bundleNo):''}</div><div class="muted">儲存時間：${esc(formatTime(r.createdAt))}</div>${r.remark? `<div class="muted">備註：${esc(r.remark)}</div>`:''}<div class="muted">貨物照片 ${(r.photos||[]).length} 張 · AI：${esc(r.aiStatus||'舊資料')}</div>${r.damage?`<div class="muted" style="color:#a52c25">破損：${esc(r.damage.type)}／${esc(r.damage.location)} · 照片 ${(r.damage.photos||[]).length} 張</div>`:''}</div>`).join(''):'<div class="empty">尚無紀錄</div>';
  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(confirm('確定刪除這筆紀錄？')){await del(Number(b.dataset.del));refresh()}});
 }
 $('batchTab').onclick=()=>{mode='batch';$('batchTab').classList.add('active');$('singleTab').classList.remove('active');updatePreview()};
 $('singleTab').onclick=()=>{mode='single';$('singleTab').classList.add('active');$('batchTab').classList.remove('active');updatePreview()};
 ['bundles','pieces'].forEach(id=>$(id).addEventListener('input',updatePreview));
 $('groupBy').onchange=refresh;$('filterHold').onchange=refresh;
+async function compressImage(file,maxSide=1600,quality=.72){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const scale=Math.min(1,maxSide/Math.max(img.width,img.height)),w=Math.round(img.width*scale),h=Math.round(img.height*scale),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);resolve({name:file.name||'photo.jpg',type:'image/jpeg',data:c.toDataURL('image/jpeg',quality)})};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('照片讀取失敗'))};img.src=url})}
+async function readPhotos(input){const files=[...$(input).files];const out=[];for(const f of files){if(!f.type.startsWith('image/'))continue;out.push(await compressImage(f))}return out}
 $('save').onclick=async()=>{
  const b=mode==='single'?1:Number($('bundles').value),p=Number($('pieces').value),l=Number($('length').value),w=$('weight').value.trim()===''?null:Number($('weight').value);
  if(!Number.isInteger(b)||b<1||!Number.isInteger(p)||p<1||!Number.isFinite(l)||l<=0||!$('spec').value.trim()||(w!==null&&(!Number.isFinite(w)||w<0))){alert('請檢查必填欄位：規格、長度、捆數、每捆件數及重量格式。');return}
  const clickedAt=new Date();
- await put({vessel:$('vessel').value,voyage:$('voyage').value,date:$('workdate').value,hold:$('hold').value,bay:$('bay').value.trim(),cargo:$('cargo').value,spec:$('spec').value.trim(),bundles:b,pieces:p,length:l,weight:w,weightUnit:$('weightUnit').value,bundleNo:$('bundleNo').value.trim(),remark:$('remark').value.trim(),createdAt:clickedAt.toISOString()});
- $('remark').value='';$('bundleNo').value='';await refresh();alert(`已儲存到此手機。\n點擊／儲存時間：${formatTime(clickedAt.toISOString())}`);
+ const cargoPhotos=await readPhotos('cargoPhotos'),damagePhotos=await readPhotos('damagePhotos');
+ const damage=$('hasDamage').checked?{type:$('damageType').value,location:$('damageLocation').value.trim(),remark:$('damageRemark').value.trim(),photos:damagePhotos,createdAt:clickedAt.toISOString()}:null;
+ await put({vessel:$('vessel').value,voyage:$('voyage').value,date:$('workdate').value,hold:$('hold').value,bay:$('bay').value.trim(),cargo:$('cargo').value,spec:$('spec').value.trim(),bundles:b,pieces:p,length:l,weight:w,weightBasis:$('weightBasis').value,weightUnit:$('weightUnit').value,bundleNo:$('bundleNo').value.trim(),remark:$('remark').value.trim(),photos:cargoPhotos.map(x=>({...x,kind:$('photoKind').value})),damage,aiStatus:$('aiStatus').value,createdAt:clickedAt.toISOString()});
+ $('remark').value='';$('bundleNo').value='';$('cargoPhotos').value='';$('damagePhotos').value='';$('damageRemark').value='';$('damageLocation').value='';$('hasDamage').checked=false;await refresh();alert(`已儲存到此手機。\n貨物照片：${cargoPhotos.length} 張；破損照片：${damagePhotos.length} 張\n點擊／儲存時間：${formatTime(clickedAt.toISOString())}`);
 };
 function download(name,blob){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function csvCell(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
@@ -141,19 +158,59 @@ function colName(n){let out='';while(n){let r=(n-1)%26;out=String.fromCharCode(6
 function worksheetXml(rows){let out='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';rows.forEach((row,ri)=>{out+=`<row r="${ri+1}">`;row.forEach((v,ci)=>{if(v===null||v===undefined||v==='')return;const ref=colName(ci+1)+(ri+1);if(typeof v==='number'&&Number.isFinite(v)){out+=`<c r="${ref}"><v>${v}</v></c>`}else{out+=`<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`}});out+='</row>'});return out+'</sheetData></worksheet>'}
 function crc32(bytes){let crc=-1;for(let i=0;i<bytes.length;i++){crc^=bytes[i];for(let j=0;j<8;j++)crc=(crc>>>1)^((crc&1)?0xEDB88320:0)}return (crc^(-1))>>>0}
 function makeZip(files){const enc=new TextEncoder(),local=[],central=[];let offset=0;const now=new Date(),dosTime=(now.getHours()<<11)|(now.getMinutes()<<5)|Math.floor(now.getSeconds()/2),dosDate=((Math.max(1980,now.getFullYear())-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate();for(const [name,content] of Object.entries(files)){const n=enc.encode(name),data=enc.encode(content),crc=crc32(data),lh=new Uint8Array(30+n.length+data.length),lv=new DataView(lh.buffer);lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x0800,true);lv.setUint16(8,0,true);lv.setUint16(10,dosTime,true);lv.setUint16(12,dosDate,true);lv.setUint32(14,crc,true);lv.setUint32(18,data.length,true);lv.setUint32(22,data.length,true);lv.setUint16(26,n.length,true);lv.setUint16(28,0,true);lh.set(n,30);lh.set(data,30+n.length);local.push(lh);const ch=new Uint8Array(46+n.length),cv=new DataView(ch.buffer);cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);cv.setUint16(12,dosTime,true);cv.setUint16(14,dosDate,true);cv.setUint32(16,crc,true);cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);cv.setUint16(28,n.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,offset,true);ch.set(n,46);central.push(ch);offset+=lh.length}const csize=central.reduce((s,a)=>s+a.length,0),end=new Uint8Array(22),ev=new DataView(end.buffer);ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,central.length,true);ev.setUint16(10,central.length,true);ev.setUint32(12,csize,true);ev.setUint32(16,offset,true);ev.setUint16(20,0,true);return new Blob([...local,...central,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})}
+
 $('exportXlsx').onclick=async()=>{
  const data=await all();if(!data.length){alert('目前沒有資料可匯出');return}
- const detail=[['儲存時間','船名','航次','清點日期','Hold','Bay','貨物種類','規格','捆號','捆數','每捆件數','總件數','長度(m)','單捆重量','重量單位','總重量','備註'],...data.map(r=>[formatTime(r.createdAt),r.vessel,r.voyage,r.date,r.hold,r.bay,r.cargo,r.spec,r.bundleNo,r.bundles,r.pieces,r.bundles*r.pieces,r.length,r.weight??'',r.weight===null?'':r.weightUnit,r.weight===null?'':r.weight*r.bundles,r.remark])];
- const report=[['船舶捆裝貨物統計報表'],['船名',data[0].vessel||'','航次',data[0].voyage||''],['總捆數',data.reduce((s,r)=>s+r.bundles,0),'總件數',data.reduce((s,r)=>s+r.bundles*r.pieces,0)],['TON 合計',data.filter(r=>r.weight!==null&&r.weightUnit==='TON').reduce((s,r)=>s+r.weight*r.bundles,0),'KG 合計',data.filter(r=>r.weight!==null&&r.weightUnit==='KG').reduce((s,r)=>s+r.weight*r.bundles,0)],['說明','重量只加總有填寫的紀錄；TON 與 KG 分開計算。'],[]];
+ const selectedDate=$('workdate').value||localDate();
+ const current=data.filter(r=>(r.date||'')===selectedDate);
+ const previous=data.filter(r=>(r.date||'')<selectedDate);
+ const holds=['H/1','H/2','H/3','H/4','H/5','H/6'];
+ const sumFor=(arr,hold,unit)=>arr.filter(r=>r.hold===hold).reduce((s,r)=>{
+   if(unit==='PCS')return s+r.bundles;
+   if(r.weight===null||r.weight===undefined)return s;
+   return s+(r.weightUnit==='TON'?totalWeight(r)*1000:totalWeight(r));
+ },0);
+ const totalFor=(arr,unit)=>holds.reduce((s,h)=>s+sumFor(arr,h,unit),0);
+ const daily=Array.from({length:35},()=>Array(15).fill(''));
+ daily[0][0]='LI TUN TALLY CO., LTD.';
+ daily[2][0]='DAILY WORKING REPORT';
+ daily[3][0]='M.V.';daily[3][3]=data[0].vessel||$('vessel').value;daily[3][6]='VOY:';daily[3][7]=data[0].voyage||$('voyage').value;
+ daily[5][0]='DATE:';daily[5][1]=selectedDate;daily[5][6]='ARRIVED:';daily[5][12]='WEATHER:';
+ daily[7][0]='HATCH NO.';daily[7][13]='TOTAL';
+ daily[8][0]='UNIT';
+ for(let i=0;i<6;i++){daily[7][1+i*2]=holds[i];daily[8][1+i*2]='PCS';daily[8][2+i*2]='KGM';}
+ daily[8][13]='PCS';daily[8][14]='KGM';
+ const labels={9:'Manifested Quantity',10:'D.T.',11:'H.N.',12:'W.N.',13:'WORKED TO DAY',14:'PREVIOUSLY',15:'G.TOTAL',16:'BALANCE'};
+ Object.entries(labels).forEach(([ri,label])=>daily[Number(ri)][0]=label);
+ for(let i=0;i<6;i++){
+   const pc=1+i*2,kg=pc+1,h=holds[i];
+   daily[13][pc]=sumFor(current,h,'PCS');daily[13][kg]=sumFor(current,h,'KGM');
+   daily[14][pc]=sumFor(previous,h,'PCS');daily[14][kg]=sumFor(previous,h,'KGM');
+   daily[15][pc]=daily[13][pc]+daily[14][pc];daily[15][kg]=daily[13][kg]+daily[14][kg];
+ }
+ for(const ri of [13,14,15]){
+   daily[ri][13]=holds.reduce((s,h)=>s+sumFor(ri===13?current:previous,h,'PCS'),0);
+   daily[ri][14]=holds.reduce((s,h)=>s+sumFor(ri===13?current:previous,h,'KGM'),0);
+ }
+ daily[15][13]=daily[13][13]+daily[14][13];daily[15][14]=daily[13][14]+daily[14][14];
+ daily[16][0]='BALANCE（Manifested Quantity 未提供時留白）';
+ daily[17][0]='REMARKS';
+ daily[18][0]='Bay 明細請參閱「清點明細」工作表；此報表按 Hold 彙總。';
+ daily[20][0]='PCS = 捆數；KGM = 公斤。KGM 會依單捆重量或整批總重量輸入方式計算。';
+ daily[22][0]='本日清點：'+current.length+' 筆；先前清點：'+previous.length+' 筆。';
+ const detail=[['index','船名','航次','清點日期','Hold','Bay','貨物種類','貨物規格','捆號','捆數 PCS','每捆件數','總件數','長度(m)','重量輸入方式','輸入重量','重量單位','總重量','備註','清點時間','貨物照片數','貨物照片索引','破損類型','破損位置','破損說明','破損照片數','破損照片索引','AI辨識／覆核狀態'],
+ ...data.map((r,i)=>[i+1,r.vessel,r.voyage,r.date,r.hold,r.bay,r.cargo,r.spec,r.bundleNo,r.bundles,r.pieces,r.bundles*r.pieces,r.length,r.weightBasis==='batch_total'?'整批總重量':'單捆重量',r.weight??'',r.weight===null?'':r.weightUnit,r.weight===null?'':totalWeight(r),r.remark,formatTime(r.createdAt),(r.photos||[]).length,(r.photos||[]).map(x=>x.name).join('; '),r.damage?.type||'',r.damage?.location||'',r.damage?.remark||'',(r.damage?.photos||[]).length,(r.damage?.photos||[]).map(x=>x.name).join('; '),r.aiStatus||'舊資料'])];
+ const report=[['船舶捆裝貨物統計報表'],['船名',data[0].vessel||$('vessel').value,'航次',data[0].voyage||$('voyage').value],['總捆數 PCS',data.reduce((s,r)=>s+r.bundles,0),'總件數',data.reduce((s,r)=>s+r.bundles*r.pieces,0)],['總重量 TON',data.filter(r=>r.weight!==null&&r.weightUnit==='TON').reduce((s,r)=>s+totalWeight(r),0),'總重量 KGM',data.filter(r=>r.weight!==null&&r.weightUnit==='KG').reduce((s,r)=>s+totalWeight(r),0)],['破損紀錄數',data.filter(r=>r.damage).length,'貨物照片總數',data.reduce((s,r)=>s+(r.photos||[]).length,0)],['Daily Working Report 日期',selectedDate],['說明','Daily - 1 以 Hold 彙總 PCS／KGM；Bay、規格及照片索引保留於清點明細。']];
  const dimensions=[['Hold','hold'],['Bay','bay'],['貨物種類','cargo'],['規格','spec'],['長度(m)','length']];
- for(const [label,key] of dimensions){report.push([`依${label}統計`],[label,'捆數','總件數','重量 TON','重量 KG']);const groups={};data.forEach(r=>{const k=String(r[key]??'');groups[k]??={b:0,p:0,ton:0,kg:0};groups[k].b+=r.bundles;groups[k].p+=r.bundles*r.pieces;if(r.weight!==null)groups[k][r.weightUnit.toLowerCase()]+=r.weight*r.bundles});Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'zh-Hant')).forEach(([k,v])=>report.push([k,v.b,v.p,v.ton,v.kg]));report.push([])}
- const files={'[Content_Types].xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>','_rels/.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>','xl/workbook.xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="清點明細" sheetId="1" r:id="rId1"/><sheet name="統計報表" sheetId="2" r:id="rId2"/></sheets></workbook>','xl/_rels/workbook.xml.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>','xl/worksheets/sheet1.xml':worksheetXml(detail),'xl/worksheets/sheet2.xml':worksheetXml(report)};
- download(`船舶貨物清點_${localDate()}.xlsx`,makeZip(files));
+ for(const [label,key] of dimensions){report.push([`依${label}統計`],[label,'捆數 PCS','總件數','重量 TON','重量 KGM']);const groups={};data.forEach(r=>{const k=String(r[key]??'');groups[k]??={b:0,p:0,ton:0,kg:0};groups[k].b+=r.bundles;groups[k].p+=r.bundles*r.pieces;if(r.weight!==null)groups[k][r.weightUnit.toLowerCase()==='kg'?'kg':'ton']+=totalWeight(r)});Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0],'zh-Hant')).forEach(([k,v])=>report.push([k,v.b,v.p,v.ton,v.kg]));report.push([])}
+ const notes=[['使用說明'],['1. Daily - 1 的每個 Hold 分別顯示 PCS（捆數）及 KGM（公斤）。'],['2. KGM 可輸入單捆重量（系統乘以捆數），或直接輸入整批總重量。'],['3. WORKED TO DAY 為所選日期清點；PREVIOUSLY 為所選日期之前的累計；G.TOTAL 為兩者合計。'],['4. Bay、貨物種類、規格、每捆件數及照片索引均保留在「清點明細」。'],['5. Manifested Quantity、D.T.、H.N.、W.N. 未提供的資料不會自行猜填。'],['6. TON 與 KGM 分開加總；未填重量不納入重量統計。'],['7. 照片本體留存在手機，Excel 提供照片索引；JSON 備份包含照片本體。']];
+ const files={'[Content_Types].xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet4.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>','_rels/.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>','xl/workbook.xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="DAILY - 1" sheetId="1" r:id="rId1"/><sheet name="清點明細" sheetId="2" r:id="rId2"/><sheet name="統計報表" sheetId="3" r:id="rId3"/><sheet name="使用說明" sheetId="4" r:id="rId4"/></sheets></workbook>','xl/_rels/workbook.xml.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet4.xml"/></Relationships>','xl/worksheets/sheet1.xml':worksheetXml(daily),'xl/worksheets/sheet2.xml':worksheetXml(detail),'xl/worksheets/sheet3.xml':worksheetXml(report),'xl/worksheets/sheet4.xml':worksheetXml(notes)};
+ download(`Daily_Working_Report_清點匯出_${selectedDate}.xlsx`,makeZip(files));
 };
 $('export').onclick=async()=>{
  const data=await all();if(!data.length){alert('目前沒有資料可匯出');return}
  const head=['儲存時間','船名','航次','日期','Hold','Bay','貨物種類','規格','捆號','捆數','每捆件數','總件數','長度(m)','單捆重量','重量單位','總重量','備註'];
- const rows=data.map(r=>[formatTime(r.createdAt),r.vessel,r.voyage,r.date,r.hold,r.bay,r.cargo,r.spec,r.bundleNo,r.bundles,r.pieces,r.bundles*r.pieces,r.length,r.weight??'',r.weight===null?'':r.weightUnit,r.weight===null?'':r.weight*r.bundles,r.remark]);
+ const rows=data.map(r=>[formatTime(r.createdAt),r.vessel,r.voyage,r.date,r.hold,r.bay,r.cargo,r.spec,r.bundleNo,r.bundles,r.pieces,r.bundles*r.pieces,r.length,r.weight??'',r.weight===null?'':r.weightUnit,r.weight===null?'':totalWeight(r),r.remark]);
  const csv='\uFEFF'+[head,...rows].map(row=>row.map(csvCell).join(',')).join('\r\n');
  download('船舶貨物清點_'+new Date().toISOString().slice(0,10)+'.csv',new Blob([csv],{type:'text/csv;charset=utf-8'}));
 };

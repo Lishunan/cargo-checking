@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17365d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="貨物清點">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>船舶捆裝貨物清點</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f3f5f8}
+*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{background:#17365d;color:white;padding:18px 16px 16px;position:sticky;top:0;z-index:2}
+header h1{font-size:19px;margin:0 0 4px}header p{font-size:12px;margin:0;opacity:.85}
+main{max-width:720px;margin:auto;padding:14px}
+.card{background:white;border-radius:14px;padding:15px;margin-bottom:13px;box-shadow:0 1px 5px #10204012}
+h2{font-size:16px;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:12px;color:#58657a;margin:0 0 5px}
+input,select,textarea{width:100%;font:inherit;font-size:16px;border:1px solid #cbd3df;border-radius:9px;padding:11px;background:white;color:#172033;min-width:0}
+textarea{min-height:62px;resize:vertical}.full{grid-column:1/-1}
+button{border:0;border-radius:10px;padding:12px 14px;font-size:15px;font-weight:650;background:#1769aa;color:white}
+button.secondary{background:#e8eef5;color:#17365d}button.danger{background:#fff0ef;color:#a52c25}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+.tabs{display:flex;gap:7px;margin-bottom:12px}.tabs button{flex:1;background:#e8eef5;color:#17365d}.tabs button.active{background:#1769aa;color:white}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{background:#f1f5fa;padding:11px;border-radius:10px}.stat small{display:block;color:#66758a}.stat strong{font-size:22px}
+.item{border:1px solid #e0e5ed;border-radius:10px;padding:11px;margin-top:8px}.itemtop{display:flex;justify-content:space-between;gap:8px;align-items:center}.muted{color:#66758a;font-size:12px}.pill{font-size:11px;background:#eaf2fb;color:#1b5b91;border-radius:20px;padding:4px 8px}
+.notice{font-size:12px;color:#66758a;line-height:1.5}.empty{color:#7b8797;text-align:center;padding:16px}
+#status{font-size:12px;margin-top:8px;color:#d7e9ff}
+@media(min-width:600px){main{padding:20px}.stats{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header><h1>船舶捆裝貨物清點</h1><p>離線可用 · 手機本機保存 · Excel 匯出</p><div id="status">正在檢查離線功能…</div></header>
+<main>
+<section class="card">
+<h2>作業資料</h2>
+<div class="grid">
+<div class="full"><label>船名</label><input id="vessel" placeholder="Vessel name"></div>
+<div><label>航次</label><input id="voyage" placeholder="Voyage No."></div>
+<div><label>清點日期</label><input id="workdate" type="date"></div>
+</div>
+</section>
+<section class="card">
+<h2>新增清點紀錄</h2>
+<div class="tabs"><button id="batchTab" class="active" type="button">批次登記</button><button id="singleTab" type="button">單捆登記</button></div>
+<div class="grid">
+<div><label>Hold</label><select id="hold"><option>H/1</option><option>H/2</option><option>H/3</option><option>H/4</option><option>H/5</option><option>Deck</option></select></div>
+<div><label>Bay</label><input id="bay" value="01" placeholder="例如 01"></div>
+<div class="full"><label>貨物種類</label><select id="cargo"><option>Steel Pipe 鋼管</option><option>Steel Plate 鋼板</option><option>Steel Coil 鋼捲</option><option>H-Beam H型鋼</option><option>Timber 木材</option><option>Other 其他</option></select></div>
+<div class="full"><label>貨物規格（必填）</label><input id="spec" placeholder="例如 Ø114 × 6.0mm"></div>
+<div><label>長度（公尺）</label><input id="length" type="number" min="0" step="0.01" value="6"></div>
+<div><label>每捆支數／件數</label><input id="pieces" type="number" min="1" step="1" value="20"></div>
+<div id="bundlesWrap" class="full"><label>本次捆數</label><input id="bundles" type="number" min="1" step="1" value="5"></div>
+<div><label>單捆重量（選填）</label><input id="weight" type="number" min="0" step="0.001" placeholder="可留白"></div>
+<div><label>重量單位</label><select id="weightUnit"><option>TON</option><option>KG</option></select></div>
+<div class="full"><label>捆號／起訖號（選填）</label><input id="bundleNo" placeholder="例如 SP-001 或 SP-001~SP-005"></div>
+<div class="full"><label>備註／異常</label><textarea id="remark" placeholder="破損、短少、標籤遺失等"></textarea></div>
+</div>
+<p class="notice" id="preview">本次預計：5 捆 × 20 件 = 100 件</p>
+<button id="save" style="width:100%">儲存清點紀錄</button>
+<p class="notice">批次登記只適用於同一 Hold、Bay、種類、規格、長度、每捆件數及單捆重量相同的貨物。若每捆件數不同，請逐捆登記。</p>
+</section>
+<section class="card">
+<h2>即時統計</h2>
+<div class="stats">
+<div class="stat"><small>總捆數</small><strong id="sBundles">0</strong></div>
+<div class="stat"><small>總件數</small><strong id="sPieces">0</strong></div>
+<div class="stat"><small>已知重量（TON）</small><strong id="sTon">0</strong></div>
+<div class="stat"><small>已知重量（KG）</small><strong id="sKg">0</strong></div>
+</div>
+<div class="grid" style="margin-top:12px">
+<div><label>統計分類</label><select id="groupBy"><option value="hold">Hold</option><option value="bay">Bay</option><option value="cargo">貨物種類</option><option value="spec">規格</option><option value="length">長度</option></select></div>
+<div><label>明細篩選 Hold</label><select id="filterHold"><option value="">全部</option><option>H/1</option><option>H/2</option><option>H/3</option><option>H/4</option><option>H/5</option><option>Deck</option></select></div>
+</div>
+<div id="summary"></div>
+</section>
+<section class="card">
+<div class="itemtop"><h2 style="margin:0">清點明細</h2><span class="pill" id="count">0 筆</span></div>
+<div id="records"><div class="empty">尚無紀錄</div></div>
+<div class="actions" style="margin-top:12px">
+<button id="export" type="button">匯出 Excel 相容 CSV</button>
+<button id="backup" type="button" class="secondary">備份 JSON</button>
+</div>
+<div class="actions" style="margin-top:8px">
+<button id="restoreBtn" type="button" class="secondary">匯入備份</button>
+<button id="clear" type="button" class="danger">清空資料</button>
+<input id="restoreFile" type="file" accept=".json,application/json" hidden>
+</div>
+<p class="notice">CSV 可用 Microsoft Excel 開啟；若需要原生 .xlsx，可將資料匯入前面提供的 Excel 範本。備份 JSON 可用於換機或還原資料。</p>
+</section>
+<section class="card">
+<h2>使用提醒</h2>
+<p class="notice">資料儲存在此 iPhone 的瀏覽器本機資料庫。請定期匯出 CSV／JSON 備份。清除 Safari 網站資料、移除網站資料或更換手機可能造成資料遺失。此版本不會自動同步到其他裝置。</p>
+</section>
+</main>
+<script>
+const DB_NAME='cargo-count-db', STORE='records'; let db, mode='batch', records=[];
+const $=id=>document.getElementById(id);
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>req.result.createObjectStore(STORE,{keyPath:'id',autoIncrement:true});req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+function all(){return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly'),r=tx.objectStore(STORE).getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+function put(obj){return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite'),r=tx.objectStore(STORE).add(obj);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+function del(id){return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+function clearDB(){return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function num(v){return Number(v)||0}
+function updatePreview(){const b=mode==='single'?1:num($('bundles').value),p=num($('pieces').value);$('preview').textContent=`本次預計：${b} 捆 × ${p} 件 = ${b*p} 件`;$('bundlesWrap').style.display=mode==='single'?'none':'block'}
+function groupLabel(r,k){return k==='hold'?r.hold:k==='bay'?r.bay:k==='cargo'?r.cargo:k==='spec'?r.spec:`${r.length} m`}
+async function refresh(){
+ records=await all(); const totalB=records.reduce((s,r)=>s+r.bundles,0), totalP=records.reduce((s,r)=>s+r.bundles*r.pieces,0);
+ const ton=records.filter(r=>r.weight!==null&&r.weightUnit==='TON').reduce((s,r)=>s+r.weight*r.bundles,0);
+ const kg=records.filter(r=>r.weight!==null&&r.weightUnit==='KG').reduce((s,r)=>s+r.weight*r.bundles,0);
+ $('sBundles').textContent=totalB.toLocaleString();$('sPieces').textContent=totalP.toLocaleString();$('sTon').textContent=ton.toLocaleString(undefined,{maximumFractionDigits:3});$('sKg').textContent=kg.toLocaleString(undefined,{maximumFractionDigits:3});
+ const key=$('groupBy').value,groups={};records.forEach(r=>{const k=groupLabel(r,key);groups[k]??={b:0,p:0,ton:0,kg:0};groups[k].b+=r.bundles;groups[k].p+=r.bundles*r.pieces;if(r.weight!==null){groups[k][r.weightUnit.toLowerCase()]+=r.weight*r.bundles}});
+ $('summary').innerHTML=Object.keys(groups).length?Object.entries(groups).map(([k,v])=>`<div class="item"><div class="itemtop"><b>${esc(k)}</b><span class="pill">${v.b} 捆</span></div><div class="muted">${v.p.toLocaleString()} 件 · ${v.ton.toLocaleString()} TON · ${v.kg.toLocaleString()} KG</div></div>`).join(''):'<div class="empty">尚無統計資料</div>';
+ const f=$('filterHold').value,shown=records.filter(r=>!f||r.hold===f).slice().reverse();$('count').textContent=`${shown.length} 筆`;
+ $('records').innerHTML=shown.length?shown.map(r=>`<div class="item"><div class="itemtop"><b>#${r.id} ${esc(r.cargo)}</b><button class="danger" data-del="${r.id}" style="padding:7px 10px;font-size:12px">刪除</button></div><div class="muted">${esc(r.hold)} / Bay ${esc(r.bay)} · ${esc(r.spec)}</div><div>${r.bundles} 捆 × ${r.pieces} 件 = <b>${(r.bundles*r.pieces).toLocaleString()} 件</b></div><div class="muted">長度 ${r.length} m · ${r.weight===null?'重量未提供':`${r.weight} ${r.weightUnit}/捆`}${r.bundleNo?' · 捆號 '+esc(r.bundleNo):''}</div>${r.remark?`<div class="muted">備註：${esc(r.remark)}</div>`:''}</div>`).join(''):'<div class="empty">尚無紀錄</div>';
+ document.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(confirm('確定刪除這筆紀錄？')){await del(Number(b.dataset.del));refresh()}});
+}
+$('batchTab').onclick=()=>{mode='batch';$('batchTab').classList.add('active');$('singleTab').classList.remove('active');updatePreview()};
+$('singleTab').onclick=()=>{mode='single';$('singleTab').classList.add('active');$('batchTab').classList.remove('active');updatePreview()};
+['bundles','pieces'].forEach(id=>$(id).addEventListener('input',updatePreview));
+$('groupBy').onchange=refresh;$('filterHold').onchange=refresh;
+$('save').onclick=async()=>{
+ const b=mode==='single'?1:Number($('bundles').value),p=Number($('pieces').value),l=Number($('length').value),w=$('weight').value.trim()===''?null:Number($('weight').value);
+ if(!Number.isInteger(b)||b<1||!Number.isInteger(p)||p<1||!Number.isFinite(l)||l<=0||!$('spec').value.trim()||(w!==null&&(!Number.isFinite(w)||w<0))){alert('請檢查必填欄位：規格、長度、捆數、每捆件數及重量格式。');return}
+ await put({vessel:$('vessel').value,voyage:$('voyage').value,date:$('workdate').value,hold:$('hold').value,bay:$('bay').value.trim(),cargo:$('cargo').value,spec:$('spec').value.trim(),bundles:b,pieces:p,length:l,weight:w,weightUnit:$('weightUnit').value,bundleNo:$('bundleNo').value.trim(),remark:$('remark').value.trim(),createdAt:new Date().toISOString()});
+ $('remark').value='';$('bundleNo').value='';await refresh();alert('已儲存到此手機。');
+};
+function download(name,blob){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+function csvCell(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
+$('export').onclick=async()=>{
+ const data=await all();if(!data.length){alert('目前沒有資料可匯出');return}
+ const head=['船名','航次','日期','Hold','Bay','貨物種類','規格','捆號','捆數','每捆件數','總件數','長度(m)','單捆重量','重量單位','總重量','備註'];
+ const rows=data.map(r=>[r.vessel,r.voyage,r.date,r.hold,r.bay,r.cargo,r.spec,r.bundleNo,r.bundles,r.pieces,r.bundles*r.pieces,r.length,r.weight??'',r.weight===null?'':r.weightUnit,r.weight===null?'':r.weight*r.bundles,r.remark]);
+ const csv='\uFEFF'+[head,...rows].map(row=>row.map(csvCell).join(',')).join('\r\n');
+ download('船舶貨物清點_'+new Date().toISOString().slice(0,10)+'.csv',new Blob([csv],{type:'text/csv;charset=utf-8'}));
+};
+$('backup').onclick=async()=>download('貨物清點備份_'+new Date().toISOString().slice(0,10)+'.json',new Blob([JSON.stringify(await all(),null,2)],{type:'application/json'}));
+$('restoreBtn').onclick=()=>$('restoreFile').click();
+$('restoreFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const arr=JSON.parse(await f.text());if(!Array.isArray(arr))throw Error();for(const r of arr){const {id,...obj}=r;await put(obj)}await refresh();alert('備份匯入完成。')}catch{alert('檔案格式不正確，無法匯入。')}e.target.value=''};
+$('clear').onclick=async()=>{if(confirm('確定清空本機全部清點資料？此動作無法復原，建議先備份。')){await clearDB();refresh()}};
+$('workdate').value=new Date().toISOString().slice(0,10);
+(async()=>{try{db=await openDB();await refresh();$('status').textContent='本機資料庫已就緒。';}catch(e){$('status').textContent='無法啟用本機資料庫，請使用 Safari 並確認未開啟無痕瀏覽。'}if('serviceWorker'in navigator){try{await navigator.serviceWorker.register('./sw.js');$('status').textContent+=' · 離線快取已啟用（首次開啟需有網路）'}catch(e){$('status').textContent+=' · 離線快取尚未啟用'}}updatePreview()})();
+</script>
+</body></html>
